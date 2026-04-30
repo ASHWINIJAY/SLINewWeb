@@ -11,7 +11,7 @@ BUILD_DIR = r"C:\Users\Administrator\Desktop\SLI\SLI\SLI\login-app\react-app\bui
 app = Flask(__name__, static_folder=BUILD_DIR, static_url_path='')
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://154.66.196.144:3000", "http://154.66.196.144:5000", "http://localhost:3000", "http://localhost:5000"],
+        "origins": ["http://www.sli.uatcloud.co.za","http://154.66.196.144:3000", "http://154.66.196.144:5000", "http://localhost:3000", "http://localhost:5000"],
         "methods": ["GET", "POST", "PUT", "DELETE"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
