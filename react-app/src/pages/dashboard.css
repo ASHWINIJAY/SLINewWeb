@@ -1,0 +1,192 @@
+/* 🔷 Container */
+.dashboard-container {
+  font-family: "Segoe UI", sans-serif;
+  background: #f4f6f9;
+  min-height: 100vh;
+}
+
+/* 🔷 Header */
+.top-header {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.logout-btn:hover {
+  background: white;
+  color: #2563eb;
+}
+
+
+
+.tab {
+  background: white;
+  padding: 6px 18px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+}
+
+/* 🔷 Layout */
+.layout {
+  display: flex;
+  height: calc(100vh - 100px);
+}
+
+/* 🔷 Sidebar */
+.sidebar {
+  width: 200px;
+  background: white;
+  border-right: 1px solid #ddd;
+  padding: 10px;
+}
+
+/* Menu item */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.menu-item:hover {
+  background: #eef2ff;
+}
+
+.menu-item.active {
+  background: #dbeafe;
+  font-weight: 600;
+}
+
+/* Icon */
+.icon {
+  font-size: 18px;
+}
+
+/* Submenu */
+.submenu {
+  margin-left: 10px;
+  margin-top: 5px;
+}
+
+.submenu div {
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.submenu div:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+}
+
+/* 🔷 Content */
+.content-area {
+  flex: 1;
+  padding: 20px;
+}
+
+.welcome-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* 🔷 Footer */
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #f8f9fa;
+  padding: 6px 15px;
+  font-size: 12px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #ddd;
+}
+/* 🔷 Header Container */
+.top-header {
+  height: 70px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* 🔹 Left Section */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 🔹 Logo (wide logo support) */
+.header-logo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* 🔹 Text */
+.header-text h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.header-text span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 🔹 Right Section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* 🔹 Username */
+.user-name {
+  font-size: 13px;
+  color: #cbd5f5;
+}
+
+/* 🔹 Logout Button */
+.logout-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  color: white;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+}

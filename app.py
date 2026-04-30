@@ -395,7 +395,7 @@ def get_requisitions():
                    m.ReqnRaisedDate, m.ReqnStatus,
                    d.Supplier, d.SupplierName
             FROM ReqDetail d
-            LEFT JOIN ReqMaster m ON d.Requisition = m.Requisition
+            LEFT JOIN ReqMaster m ON d.Requisition = m.Requisition WHERE ISNULL(d.Archive, 0) = 0
             ORDER BY
                 CASE WHEN m.ReqnRaisedDate IS NULL THEN 0 ELSE 1 END ASC,
                 m.ReqnRaisedDate DESC,
@@ -405,6 +405,42 @@ def get_requisitions():
 
         return jsonify([build_requisition_row(d) for d in details]), 200
     except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+        
+@app.route('/api/requisitions/archive/<path:req_number>', methods=['PUT'])
+def archive_requisition(req_number):
+    try:
+        data = request.json or {}
+        user = (data.get("username") or "").strip()
+
+        # check exists
+        exists = db.session.execute(db.text("""
+            SELECT 1 FROM ReqDetail WHERE Requisition = :req
+        """), {'req': req_number}).fetchone()
+
+        if not exists:
+            return jsonify({"error": "Requisition not found"}), 404
+
+        # 🔥 update archive + audit fields
+        db.session.execute(db.text("""
+            UPDATE ReqDetail
+            SET 
+                Archive = 1,
+                ArchivedBy = :user,
+                ArchivedTime = GETDATE()
+            WHERE Requisition = :req
+        """), {
+            'req': req_number,
+            'user': user
+        })
+
+        db.session.commit()
+
+        return jsonify({"message": "Archived successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
@@ -545,6 +581,7 @@ def get_my_requisitions(username):
         else:
             where_clause = "1=1"
             params = {}
+            
 
         details = db.session.execute(db.text(f"""
             SELECT d.Requisition, d.Line, d.Type, d.Description, d.StockCode,
@@ -555,13 +592,35 @@ def get_my_requisitions(username):
                    d.Supplier, d.SupplierName
             FROM ReqDetail d
             LEFT JOIN ReqMaster m ON d.Requisition = m.Requisition
-            WHERE {where_clause}
+            WHERE {where_clause} AND ISNULL(d.Archive, 0) = 0
             ORDER BY
                 CASE WHEN m.ReqnRaisedDate IS NULL THEN 0 ELSE 1 END ASC,
                 m.ReqnRaisedDate DESC,
                 d.Requisition DESC,
                 d.Line ASC
         """), params).fetchall()
+
+        return jsonify([build_requisition_row(d) for d in details]), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/requisitions/archive', methods=['GET'])
+def get_archived_requisitions():
+    try:
+        details = db.session.execute(db.text("""
+            SELECT d.Requisition, d.Line, d.Type, d.Description, d.StockCode,
+                   d.OrderUom, d.Qty, d.UnitPrice, d.TotalPrice, d.DueDate,
+                   d.ReceivedDate, d.ReqnReason, d.Notes, d.Company, d.Buyer,
+                   d.PurchaseOrder, d.ExpectedDeliveryDate,
+                   m.ReqnRaisedDate, m.ReqnStatus,
+                   d.Supplier, d.SupplierName
+            FROM ReqDetail d
+            LEFT JOIN ReqMaster m ON d.Requisition = m.Requisition
+            WHERE ISNULL(d.Archive, 0) = 1   -- 🔥 ONLY archived
+            ORDER BY d.Requisition DESC, d.Line ASC
+        """)).fetchall()
 
         return jsonify([build_requisition_row(d) for d in details]), 200
 

@@ -1,0 +1,132 @@
+/* 🔹 WRAPPER */
+.login-wrapper {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+  overflow: hidden;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* 🔥 ANIMATED BACKGROUND */
+.bg-animation {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, rgba(37,99,235,0.2), transparent),
+              radial-gradient(circle at 70% 70%, rgba(255,0,80,0.15), transparent),
+              radial-gradient(circle at 50% 50%, rgba(0,255,150,0.1), transparent);
+  animation: moveBg 12s linear infinite;
+}
+
+/* 🔄 Animation movement */
+@keyframes moveBg {
+  0% { transform: translate(0,0); }
+  50% { transform: translate(-10%, -10%); }
+  100% { transform: translate(0,0); }
+}
+
+/* 🔹 LOGIN CARD */
+.login-box {
+  position: relative;
+  z-index: 2;
+  background: rgba(255,255,255,0.95);
+  padding: 35px 30px;
+  border-radius: 14px;
+  width: 360px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+/* 🔹 LOGO */
+.login-logo {
+  width: 100%;
+  max-height: 70px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  animation: logoFade 1s ease;
+}
+
+@keyframes logoFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🔹 TITLE */
+.login-title {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.login-sub {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* 🔹 INPUTS */
+.login-box input {
+  width: 100%;
+  padding: 11px;
+  margin: 10px 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.login-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+  outline: none;
+}
+
+/* 🔹 BUTTON */
+.login-box button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.login-box button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+}
+
+/* 🔹 MESSAGE */
+.login-msg {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.login-msg.error {
+  color: #dc2626;
+}
+
+.login-msg.info {
+  color: #2563eb;
+}
+
+/* 🔹 FADE IN */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,9 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import "./Requisitions.css";
+import logo from "../assets/sli-logo.png";
+import {
+  FaList, FaFilter, FaSync, FaPlus, FaCheck, FaTimes,
+  FaPrint, FaRoute, FaBan, FaArchive, FaEye,
+  FaFileExcel, FaRedo, FaBox,FaChevronUp, FaChevronDown
+} from "react-icons/fa";
+const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
+  return (
+    <button onClick={onClick} className={`btn-modern ${variant}`}>
+      <span className="btn-icon">{icon}</span>
+      {label}
+    </button>
+  );
+};
 
 const API_URL = "http://41.87.206.94:5000";
-
 axios.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token && !config.url.includes("/login"))
@@ -58,7 +72,7 @@ const btn = (bg, color = "white", border = "none") => ({
 });
 
 const styles = {
-    tableHeader: { backgroundColor: "#f8f9fa", textAlign: "left", fontWeight: "600", color: "#333", borderBottom: "2px solid #ddd", padding: "10px", whiteSpace: "nowrap", fontSize: "13px" },
+    tableHeader: { backgroundColor: "#2c394d", textAlign: "left", fontWeight: "600", color: "#ffff", borderBottom: "2px solid #ddd", padding: "10px", whiteSpace: "nowrap", fontSize: "13px" },
     tableCell: { padding: "8px 10px", borderBottom: "1px solid #eee", whiteSpace: "nowrap", fontSize: "13px" },
     modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 },
     declineModalContent: { background: "white", padding: "30px", borderRadius: "10px", width: "420px", boxShadow: "0 4px 8px rgba(0,0,0,0.2)" },
@@ -188,7 +202,8 @@ const Requisitions = () => {
     const isApprover1 = role === "Approvar1";
     const isApprover2 = role === "Approvar2";
     const isBuyer = role === "Buyer";
-
+const [filters, setFilters] = useState({});
+const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
     const [toasts, setToasts] = useState([]);
     const [confirmCfg, setConfirmCfg] = useState(null);
     const [confirmRes, setConfirmRes] = useState(null);
@@ -213,7 +228,7 @@ const Requisitions = () => {
     const [loading, setLoading] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [statusFilter, setStatusFilter] = useState(null);
-
+const [showToolbar, setShowToolbar] = useState(true);
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [showApprove1RouteModal, setShowApprove1RouteModal] = useState(false);
     const [showApprove2RouteModal, setShowApprove2RouteModal] = useState(false);
@@ -257,6 +272,41 @@ const Requisitions = () => {
         ? requisitions.filter(r => (r.req_number || r.req_id) === selectedGroup)
         : [];
     const selectedLine = selectedGroupLines[0] || null;
+    const handleFilterChange = (key, value) => {
+  setFilters(prev => ({
+    ...prev,
+    [key]: value.toLowerCase()
+  }));
+};
+const filteredData = requisitions
+  .filter(row => {
+    return Object.keys(filters).every(key => {
+      if (!filters[key]) return true;
+      return (row[key] || "")
+        .toString()
+        .toLowerCase()
+        .includes(filters[key]);
+    });
+  })
+  .sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    const valA = a[sortConfig.key] || "";
+    const valB = b[sortConfig.key] || "";
+
+    if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+    if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+  const handleSort = (key) => {
+  let direction = "asc";
+
+  if (sortConfig.key === key && sortConfig.direction === "asc") {
+    direction = "desc";
+  }
+
+  setSortConfig({ key, direction });
+};
 
     /* ── Fetch ── */
     const fetchRequisitions = async () => {
@@ -431,13 +481,52 @@ const Requisitions = () => {
         window.print();
     };
 
-    /* ── Archive ── */
+     /* ── Archive ── */
     const handleArchive = async () => {
-        if (!selectedGroup) { toast("Please select a requisition first.", "error"); return; }
-        toast(`REQ #${selectedGroup} archived.`, "info");
-    };
+    if (!selectedGroup) {
+        toast("Please select a requisition first.", "error");
+        return;
+    }
 
-    const handleViewArchive = () => { toast("View Archive — coming soon.", "info"); };
+    const ok = await confirm(
+        "Archive Requisition",
+        `Are you sure you want to archive REQ #${selectedGroup}?`,
+        false,
+        "Archive"
+    );
+
+    if (!ok) return;
+
+    try {
+        await axios.put(
+  `${API_URL}/api/requisitions/archive/${selectedGroup}`,
+  { username: username }
+);
+
+        toast(`REQ #${selectedGroup} archived successfully.`);
+        setSelectedGroup(null);
+        handleShowAll(); // refresh grid
+    } catch (err) {
+        toast(`Failed: ${err.response?.data?.error || err.message}`, "error");
+    }
+};
+
+   const handleViewArchive = async () => {
+    try {
+        setLoading(true);
+
+        const res = await axios.get(`${API_URL}/api/requisitions/archive`);
+
+        setRequisitions(res.data);
+        setSelectedGroup(null);
+
+        toast(`Showing ${res.data.length} archived requisition(s)`);
+    } catch (err) {
+        toast(`Failed: ${err.response?.data?.error || err.message}`, "error");
+    } finally {
+        setLoading(false);
+    }
+};
     const handleRestoreGridLayout = () => { toast("Grid layout restored.", "info"); };
 
     /* ── Export ── */
@@ -658,90 +747,293 @@ return;
         } catch (err) { toast(`Failed to save: ${err.response?.data?.error || err.message}`, "error"); }
         finally { setSaving(false); }
     };
+const processedData = [...requisitions]
+  .filter(row => {
+    return Object.keys(filters).every(key => {
+      if (!filters[key]) return true;
+      return (row[key] || "")
+        .toString()
+        .toLowerCase()
+        .includes(filters[key]);
+    });
+  })
+  .sort((a, b) => {
+    if (!sortConfig.key) return 0;
 
-    const groups = groupByReqNumber(requisitions);
+    let valA = a[sortConfig.key] ?? "";
+    let valB = b[sortConfig.key] ?? "";
+
+    // handle numbers properly
+    if (!isNaN(valA) && !isNaN(valB)) {
+      valA = Number(valA);
+      valB = Number(valB);
+    } else {
+      valA = valA.toString().toLowerCase();
+      valB = valB.toString().toLowerCase();
+    }
+
+    if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+    if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+const groups = groupByReqNumber(processedData);
 
     /* ══════════════════════════════════════════════════════════════
        RENDER
     ══════════════════════════════════════════════════════════════ */
-    return (
-        <div style={{ fontFamily: "Segoe UI, sans-serif", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "#f5f5f5" }}>
+     return (
+         <div className="requisitions-container">
             <Toast toasts={toasts} />
             <ConfirmDialog cfg={confirmCfg} onYes={handleConfirmYes} onNo={handleConfirmNo} />
+<div className="header-modern">
 
-            {/* ── Dark header bar ── */}
-            <div style={{ backgroundColor: "#2c3e50", color: "white", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "700" }}>Requisitions - SLI REQUISITION</h2>
-                <button onClick={handleLogout} style={{ padding: "6px 16px", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>🔓 Logout</button>
-            </div>
+  <div className="header-left">
+    <img src={logo} alt="SLI Logo" className="header-logo" />
+
+    <div className="header-text">
+      <h2>SLI REQUISITION</h2>
+      <span>Requisitions</span>
+    </div>
+  </div>
+
+  <div className="header-right">
+    <span className="user-name">{firstName}</span>
+
+    <button onClick={handleLogout} className="logout-modern">
+      🔓 Logout
+    </button>
+  </div>
+
+</div>
+             
 
             {/* ── Status legend (clickable filters) ── */}
-            <div style={{ padding: "8px 20px", display: "flex", gap: "18px", flexWrap: "wrap", fontSize: "13px", borderBottom: "1px solid #eee" }}>
-                {legendItems.map((item, i) => (
-                    <span key={i}
-                        onClick={() => handleStatusFilter(item.label)}
-                        style={{
-                            display: "flex", alignItems: "center", gap: "5px", color: item.color, fontWeight: "600",
-                            cursor: "pointer", opacity: statusFilter && statusFilter !== item.label ? 0.4 : 1,
-                            textDecoration: statusFilter === item.label ? "underline" : "none",
-                            transition: "opacity 0.2s",
-                        }}>
-                        <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: item.color, display: "inline-block" }}></span>
-                        {item.label}
-                    </span>
-                ))}
-                {statusFilter && (
-                    <span onClick={() => { setRequisitions(allRequisitions); setStatusFilter(null); }}
-                        style={{ color: "#007bff", cursor: "pointer", fontWeight: "600", textDecoration: "underline", fontSize: "12px" }}>
-                        ✕ Clear Filter
-                    </span>
-                )}
-            </div>
+          <div
+  style={{
+    padding: "8px 20px",
+    display: "flex",
+    gap: "18px",
+    flexWrap: "wrap",
+    fontSize: "13px",
+    borderBottom: "1px solid #eee",
+    alignItems: "center",
+    justifyContent: "space-between"
+  }}
+>
+
+  {/* 🔹 LEFT SIDE (legend items) */}
+  <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
+    {legendItems.map((item, i) => (
+      <span
+        key={i}
+        onClick={() => handleStatusFilter(item.label)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "5px",
+          color: item.color,
+          fontWeight: "600",
+          cursor: "pointer",
+          opacity: statusFilter && statusFilter !== item.label ? 0.4 : 1,
+          textDecoration: statusFilter === item.label ? "underline" : "none",
+          transition: "opacity 0.2s"
+        }}
+      >
+        <span
+          style={{
+            width: "10px",
+            height: "10px",
+            borderRadius: "50%",
+            backgroundColor: item.color,
+            display: "inline-block"
+          }}
+        ></span>
+        {item.label}
+      </span>
+    ))}
+
+    {statusFilter && (
+      <span
+        onClick={() => {
+          setRequisitions(allRequisitions);
+          setStatusFilter(null);
+        }}
+        style={{
+          color: "#007bff",
+          cursor: "pointer",
+          fontWeight: "600",
+          textDecoration: "underline",
+          fontSize: "12px"
+        }}
+      >
+        ✕ Clear Filter
+      </span>
+    )}
+  </div>
+
+  {/* 🔘 RIGHT SIDE (toggle button) */}
+ <button
+  onClick={() => setShowToolbar(!showToolbar)}
+  style={{
+    border: "1px solid #ccc",
+    background: "#fff",
+    borderRadius: "6px",
+    padding: "6px 10px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}
+>
+  {showToolbar ? <FaChevronUp /> : <FaChevronDown />}
+</button>
+
+</div>
 
             {/* ── Main toolbar (all buttons from image3) ── */}
-            <div style={{ padding: "8px 15px", borderBottom: "1px solid #ccc", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                <button onClick={handleShowAll} style={btn("#ffffff", "#555", "1px solid #ccc")}>Show All</button>
-                <button onClick={handleClearFilter} style={btn("#ffffff", "#555", "1px solid #ccc")}>Clear Filter</button>
-                <button onClick={handleShowAll} style={btn("#007bff")}>Refresh</button>
-                <button onClick={handleOpenNewReq} style={btn("#007bff")}>New Requisition</button>
-                <button onClick={handleApprove} style={btn("#28a745")}>Approve</button>
-                <button onClick={handleDecline} style={btn("#ffc107", "#212529")}>Decline</button>
-                <button onClick={handlePrintRequisition} style={btn("#dc3545")}>Print Requisition</button>
-                <button onClick={handlePrintFullRequisition} style={btn("#6c757d")}>Print Full Requisition</button>
-                <button onClick={handleRouteTo} style={btn("#6c757d")}>Route To</button>
-                <button onClick={handleCancelRequisition} style={btn("#ffffff", "#28a745", "1px solid #28a745")}>Cancel Requisition</button>
-                <button onClick={handleArchive} style={btn("#6610f2")}>Archive</button>
-                <button onClick={handleViewArchive} style={btn("#ffffff", "#28a745", "1px solid #28a745")}>View Archive</button>
-                <button onClick={handleMarkPOCreated} style={btn("#343a40")}>Mark as PO Created</button>
-                <button onClick={handleRestoreGridLayout} style={btn("#ffffff", "#000", "1px solid #000")}>Restore Grid Layout</button>
-                <button onClick={handleViewRequisition} style={btn("#17a2b8")}>View Requisition</button>
-                <button onClick={handleExportToExcel} style={btn("#155724")}>Export to Excel</button>
-            </div>
+          
+
+  {/* 🔻 Collapsible Toolbar */}
+
+ {showToolbar && (
+  <div className="toolbar-card">
+
+      <ActionButton icon={<FaList />} label="Show All" onClick={handleShowAll} variant="cyan"/>
+
+      <ActionButton icon={<FaFilter />} label="Clear Filter" onClick={handleClearFilter} variant="slate" />
+
+      <ActionButton icon={<FaSync />} label="Refresh" onClick={handleShowAll} variant="primary" />
+
+      <ActionButton icon={<FaPlus />} label="New Requisition" onClick={handleOpenNewReq} variant="primary" />
+
+      <ActionButton icon={<FaCheck />} label="Approve" onClick={handleApprove} variant="success" />
+
+      <ActionButton icon={<FaTimes />} label="Decline" onClick={handleDecline} variant="warning" />
+
+      <ActionButton icon={<FaPrint />} label="Print Requisition" onClick={handlePrintRequisition} variant="danger" />
+
+      <ActionButton icon={<FaPrint />} label="Print Full" onClick={handlePrintFullRequisition} variant="dark" />
+
+      <ActionButton icon={<FaRoute />} label="Route To" onClick={handleRouteTo} variant="dark" />
+
+      <ActionButton icon={<FaBan />} label="Cancel Req" onClick={handleCancelRequisition} variant="rose" />
+
+      <ActionButton icon={<FaArchive />} label="Archive" onClick={handleArchive} variant="purple" />
+
+      <ActionButton icon={<FaArchive />} label="View Archive" onClick={handleViewArchive} variant="indigo" />
+
+      <ActionButton icon={<FaBox />} label="PO Created" onClick={handleMarkPOCreated} variant="dark" />
+
+      <ActionButton icon={<FaRedo />} label="Restore Layout" onClick={handleRestoreGridLayout} variant="amber" />
+
+      <ActionButton icon={<FaEye />} label="View Req" onClick={handleViewRequisition} variant="teal" />
+
+      <ActionButton icon={<FaFileExcel />} label="Export Excel" onClick={handleExportToExcel} variant="green" />
+
+    </div>
+
+)}
+
+
 
             {/* ── Main table ── */}
-            <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: "0" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                    <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
-                        <tr>
-                            <th style={styles.tableHeader}></th>
-                            <th style={styles.tableHeader}>Req #</th>
-                            <th style={styles.tableHeader}>Reqn Date</th>
-                            <th style={styles.tableHeader}>Line</th>
-                            <th style={styles.tableHeader}>PO Number</th>
-                            <th style={styles.tableHeader}>Status</th>
-                            <th style={styles.tableHeader}>Order Status</th>
-                            <th style={styles.tableHeader}>Received Date</th>
-                            <th style={styles.tableHeader}>Expected Date</th>
-                            <th style={styles.tableHeader}>Supplier</th>
-                            <th style={styles.tableHeader}>Supplier Name</th>
-                            <th style={styles.tableHeader}>Type</th>
-                            <th style={styles.tableHeader}>STK</th>
-                            <th style={styles.tableHeader}>Description</th>
-                            <th style={styles.tableHeader}>Unit Price</th>
-                            <th style={styles.tableHeader}>Quantity</th>
-                            <th style={styles.tableHeader}>Total Price</th>
-                        </tr>
-                    </thead>
+        <div className="grid-container">
+  <table className="main-table">
+                    <thead style={{ position: "sticky", top: 0, zIndex: 5 }}>
+
+  {/* 🔹 HEADER ROW */}
+  <tr>
+    <th style={styles.tableHeader}></th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("req_id")}>
+      Req # {sortConfig.key === "req_id" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("reqn_date")}>
+      Reqn Date {sortConfig.key === "reqn_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("line")}>
+      Line {sortConfig.key === "line" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("po_number")}>
+      PO Number {sortConfig.key === "po_number" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("status")}>
+      Status {sortConfig.key === "status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("order_status")}>
+      Order Status {sortConfig.key === "order_status" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("received_date")}>
+      Received Date {sortConfig.key === "received_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("expected_date")}>
+      Expected Date {sortConfig.key === "expected_date" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("supplier")}>
+      Supplier {sortConfig.key === "supplier" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("supplier_name")}>
+      Supplier Name {sortConfig.key === "supplier_name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("type")}>
+      Type {sortConfig.key === "type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("stk")}>
+      STK {sortConfig.key === "stk" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("description")}>
+      Description {sortConfig.key === "description" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("unit_price")}>
+      Unit Price {sortConfig.key === "unit_price" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("quantity")}>
+      Quantity {sortConfig.key === "quantity" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+
+    <th style={styles.tableHeader} onClick={() => handleSort("total_price")}>
+      Total Price {sortConfig.key === "total_price" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+    </th>
+  </tr>
+
+  {/* 🔽 FILTER ROW */}
+  <tr className="filter-row">
+    <th></th>
+
+    <th><input onChange={e => handleFilterChange("req_id", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("reqn_date", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("line", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("po_number", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("status", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("order_status", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("received_date", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("expected_date", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("supplier", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("supplier_name", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("type", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("stk", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("description", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("unit_price", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("quantity", e.target.value)} /></th>
+    <th><input onChange={e => handleFilterChange("total_price", e.target.value)} /></th>
+  </tr>
+
+</thead>
                     <tbody>
                         {groups.length > 0 ? groups.map(({ key, lines: groupLines }) => {
                             const totalLines = groupLines.length;
@@ -756,12 +1048,13 @@ return;
                                 const bgColor = isSelected ? "#d0e8ff" : getRowBgColor(req.status, req.supplier, role);
                                 const cellStyle = {
                                     ...styles.tableCell,
+                                     backgroundColor: bgColor, 
                                     borderBottom: idx === totalLines - 1 ? "2px solid #999" : "1px solid #eee",
                                 };
-                                const rowStyle = { backgroundColor: bgColor, cursor: "pointer", transition: "background-color 0.15s" };
+                                const rowStyle = { cursor: "pointer", transition: "background-color 0.15s" };
 
                                 return (
-                                    <tr key={req.req_id || `${key}-${idx}`} style={rowStyle} onClick={() => setSelectedGroup(isSelected ? null : key)}>
+                                    <tr key={req.req_id || `${key}-${idx}`} onClick={() => setSelectedGroup(isSelected ? null : key)}>
 
                                         {isFirst && (
                                             <td rowSpan={totalLines} style={{ ...cellStyle, borderBottom: "2px solid #999", textAlign: "center", verticalAlign: "middle", width: "40px" }}>
