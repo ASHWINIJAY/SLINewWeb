@@ -6,8 +6,14 @@ import logo from "../assets/sli-logo.png";
 import {
   FaList, FaFilter, FaSync, FaPlus, FaCheck, FaTimes,
   FaPrint, FaRoute, FaBan, FaArchive, FaEye,
-  FaFileExcel, FaRedo, FaBox,FaChevronUp, FaChevronDown
+  FaFileExcel, FaRedo, FaBox,FaChevronUp, FaChevronDown,FaFolderOpen,FaFileInvoiceDollar
 } from "react-icons/fa";
+import approveIcon from "../assets/thumb.png";
+import reqIcon from "../assets/newreq.png";
+import declineIcon from "../assets/decline.png";
+import filterIcon from "../assets/filter.png";
+import routeIcon from "../assets/routeto.png";
+import showallIcon from "../assets/showall.png";
 const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
   return (
     <button onClick={onClick} className={`btn-modern ${variant}`}>
@@ -17,7 +23,7 @@ const ActionButton = ({ icon, label, onClick, variant = "default" }) => {
   );
 };
 
-const API_URL = "http://41.87.206.94:5000";
+const API_URL = "http://154.66.196.144:5000";
 axios.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token && !config.url.includes("/login"))
@@ -154,14 +160,19 @@ const groupByReqNumber = (rows) => {
 
 /* ── Status legend (image3) ── */
 const legendItems = [
-    { label: "Created", color: "#e65c00" },
-    { label: "Samantha", color: "#e91e63" },
-    { label: "Final Approval", color: "#155724" },
-    { label: "PO Created", color: "#007bff" },
-    { label: "Received", color: "#28a745" },
-    { label: "Declined", color: "#dc3545" },
-    { label: "Delayed", color: "#ff9800" },
-    { label: "Cancelled", color: "#7f8c8d" },
+  { label: "Created", color: "#fae900" },
+  { label: "Samantha", color: "#dd88a5" },
+  { label: "Declined", color: "#e74c3c" },
+  { label: "Routed", color: "#f39703" },
+  { label: "Final Approval", color: "#27ae60" },
+   { label: "Cancelled", color: "#7f8c8d" },
+  { label: "Approve 1", color: "#8e44ad" },
+  
+  
+  { label: "Closed But PO Not Entered", color: "#3498db" },
+  
+ 
+  { label: "PO Created", color: "#a04000c1" }
 ];
 
 /* ── Export to Excel (CSV) ── */
@@ -809,130 +820,137 @@ const groups = groupByReqNumber(processedData);
              
 
             {/* ── Status legend (clickable filters) ── */}
-          <div
-  style={{
-    padding: "8px 20px",
-    display: "flex",
-    gap: "18px",
-    flexWrap: "wrap",
-    fontSize: "13px",
-    borderBottom: "1px solid #eee",
-    alignItems: "center",
-    justifyContent: "space-between"
-  }}
->
-
-  {/* 🔹 LEFT SIDE (legend items) */}
-  <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
-    {legendItems.map((item, i) => (
-      <span
-        key={i}
-        onClick={() => handleStatusFilter(item.label)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "5px",
-          color: item.color,
-          fontWeight: "600",
-          cursor: "pointer",
-          opacity: statusFilter && statusFilter !== item.label ? 0.4 : 1,
-          textDecoration: statusFilter === item.label ? "underline" : "none",
-          transition: "opacity 0.2s"
-        }}
-      >
-        <span
-          style={{
-            width: "10px",
-            height: "10px",
-            borderRadius: "50%",
-            backgroundColor: item.color,
-            display: "inline-block"
-          }}
-        ></span>
-        {item.label}
-      </span>
-    ))}
-
-    {statusFilter && (
-      <span
-        onClick={() => {
-          setRequisitions(allRequisitions);
-          setStatusFilter(null);
-        }}
-        style={{
-          color: "#007bff",
-          cursor: "pointer",
-          fontWeight: "600",
-          textDecoration: "underline",
-          fontSize: "12px"
-        }}
-      >
-        ✕ Clear Filter
-      </span>
-    )}
-  </div>
-
-  {/* 🔘 RIGHT SIDE (toggle button) */}
- <button
-  onClick={() => setShowToolbar(!showToolbar)}
-  style={{
-    border: "1px solid #ccc",
-    background: "#fff",
-    borderRadius: "6px",
-    padding: "6px 10px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}
->
-  {showToolbar ? <FaChevronUp /> : <FaChevronDown />}
-</button>
-
-</div>
+   
 
             {/* ── Main toolbar (all buttons from image3) ── */}
           
 
   {/* 🔻 Collapsible Toolbar */}
 
- {showToolbar && (
-  <div className="toolbar-card">
+{showToolbar && (
+  <div className="ribbon-container">
 
-      <ActionButton icon={<FaList />} label="Show All" onClick={handleShowAll} variant="cyan"/>
+    {/* 🔹 VIEW */}
+   <div className="ribbon-group">
 
-      <ActionButton icon={<FaFilter />} label="Clear Filter" onClick={handleClearFilter} variant="slate" />
+  {/* 🔹 LEGEND (top row) */}
+  <div className="ribbon-legend">
+    {legendItems.map((item, i) => (
+      <span
+        key={i}
+        onClick={() => handleStatusFilter(item.label)}
+        className="legend-item"
+        style={{ color: item.color }}
+      >
+        <span
+          className="legend-dot"
+          style={{ backgroundColor: item.color }}
+        ></span>
+        {item.label}
+      </span>
+    ))}
+  </div>
 
-      <ActionButton icon={<FaSync />} label="Refresh" onClick={handleShowAll} variant="primary" />
+</div>
+<div className="ribbon-group">
 
-      <ActionButton icon={<FaPlus />} label="New Requisition" onClick={handleOpenNewReq} variant="primary" />
+  <div className="ribbon-items">
+    <button onClick={handleShowAll} className="ribbon-btn">
+      <img src={showallIcon} className="ribbon-img-icon" />
+      <span>Show All</span>
+    </button>
 
-      <ActionButton icon={<FaCheck />} label="Approve" onClick={handleApprove} variant="success" />
+    <button onClick={handleClearFilter} className="ribbon-btn">
+      <img src={filterIcon} className="ribbon-img-icon" />
+      <span>Clear Filter</span>
+    </button>
 
-      <ActionButton icon={<FaTimes />} label="Decline" onClick={handleDecline} variant="warning" />
+    
+  </div>
 
-      <ActionButton icon={<FaPrint />} label="Print Requisition" onClick={handlePrintRequisition} variant="danger" />
+</div>
+    {/* 🔹 REQUEST */}
+    <div className="ribbon-group">
+      <div className="ribbon-items">
+        <button onClick={handleOpenNewReq} className="ribbon-btn primary">
+         <img src={reqIcon} className="ribbon-img-icon" />
+          <span>New Reqn</span>
+        </button>
 
-      <ActionButton icon={<FaPrint />} label="Print Full" onClick={handlePrintFullRequisition} variant="dark" />
+       <button onClick={handleApprove} className="ribbon-btn active">
+  <img src={approveIcon} className="ribbon-img-icon" />
+  <span>Approve</span>
+</button>
 
-      <ActionButton icon={<FaRoute />} label="Route To" onClick={handleRouteTo} variant="dark" />
+        <button onClick={handleRouteTo} className="ribbon-btn">
+          <img src={routeIcon} className="ribbon-img-icon" />
+          <span>Route To</span>
+        </button>
 
-      <ActionButton icon={<FaBan />} label="Cancel Req" onClick={handleCancelRequisition} variant="rose" />
-
-      <ActionButton icon={<FaArchive />} label="Archive" onClick={handleArchive} variant="purple" />
-
-      <ActionButton icon={<FaArchive />} label="View Archive" onClick={handleViewArchive} variant="indigo" />
-
-      <ActionButton icon={<FaBox />} label="PO Created" onClick={handleMarkPOCreated} variant="dark" />
-
-      <ActionButton icon={<FaRedo />} label="Restore Layout" onClick={handleRestoreGridLayout} variant="amber" />
-
-      <ActionButton icon={<FaEye />} label="View Req" onClick={handleViewRequisition} variant="teal" />
-
-      <ActionButton icon={<FaFileExcel />} label="Export Excel" onClick={handleExportToExcel} variant="green" />
-
+        <button onClick={handleDecline} className="ribbon-btn warning">
+          <img src={declineIcon} className="ribbon-img-icon" />
+          <span>Decline</span>
+        </button>
+      </div>
     </div>
 
+    {/* 🔹 PRINT */}
+ <div className="ribbon-group">
+
+  <div className="ribbon-list">
+
+    {/* 🔹 PRINT */}
+    <button onClick={handlePrintRequisition} className="ribbon-list-btn">
+      <FaPrint className="icon" />
+      <span>Print Requisition</span>
+    </button>
+
+    <button onClick={handlePrintFullRequisition} className="ribbon-list-btn">
+      <FaPrint className="icon" />
+      <span>Print Full Reqn For Job</span>
+    </button>
+
+    {/* 🔹 ACTIONS */}
+    <button onClick={handleCancelRequisition} className="ribbon-list-btn danger">
+      <FaBan className="icon" />
+      <span>Cancel Requisition</span>
+    </button>
+
+    <button onClick={handleArchive} className="ribbon-list-btn purple">
+  <FaArchive className="icon" />
+  <span>Archive</span>
+</button>
+
+<button onClick={handleViewArchive} className="ribbon-list-btn">
+  <FaFolderOpen className="icon" />
+  <span>View Archive</span>
+</button>
+
+<button onClick={handleMarkPOCreated} className="ribbon-list-btn">
+  <FaFileInvoiceDollar className="icon" />
+  <span>Mark as PO Created</span>
+</button>
+
+    <button onClick={handleRestoreGridLayout} className="ribbon-list-btn">
+      <FaRedo className="icon" />
+      <span>Restore</span>
+    </button>
+
+    <button onClick={handleViewRequisition} className="ribbon-list-btn">
+      <FaEye className="icon" />
+      <span>View</span>
+    </button>
+
+    <button onClick={handleExportToExcel} className="ribbon-list-btn green">
+      <FaFileExcel className="icon" />
+      <span>Excel</span>
+    </button>
+
+  </div>
+
+</div>
+
+  </div>
 )}
 
 
